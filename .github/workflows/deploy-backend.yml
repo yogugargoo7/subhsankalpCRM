@@ -1,0 +1,41 @@
+name: Deploy Backend to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Receipt-portal/**'
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    name: Build and Deploy Backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        working-directory: Receipt-portal
+        run: dotnet restore
+
+      - name: Build
+        working-directory: Receipt-portal
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Publish
+        working-directory: Receipt-portal
+        run: dotnet publish --configuration Release --output ./publish --no-build
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: subhsankalp-backend-new
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: Receipt-portal/publish

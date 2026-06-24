@@ -96,3 +96,15 @@ Thumbs.db
 
 #env files
 appsettings*.json
+
+# Frontend build output (built by CI/CD)
+Frontend/build/
+
+# Backend publish/deploy artifacts
+Receipt-portal/publish-*/
+Receipt-portal/publish/
+Receipt-portal/*.zip
+Receipt-portal/.azure/
+
+# Stray files
+e -i HEAD~N

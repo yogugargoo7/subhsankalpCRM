@@ -39,11 +39,9 @@ jobs:
           VITE_ENABLE_DEBUG: false
           VITE_COMPANY_NAME: Subh Sankalp Estate
 
+      - name: Install SWA CLI
+        run: npm install -g @azure/static-web-apps-cli
+
       - name: Deploy to Azure Static Web Apps
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: upload
-          app_location: Frontend/build
-          skip_app_build: true
+        working-directory: Frontend
+        run: swa deploy ./build --deployment-token "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" --env production

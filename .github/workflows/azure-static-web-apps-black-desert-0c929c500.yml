@@ -1,4 +1,4 @@
-﻿name: Azure Static Web Apps CI/CD
+name: Azure Static Web Apps CI/CD
 
 on:
   push:
@@ -15,11 +15,6 @@ jobs:
     name: Build and Deploy Job
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install system dependencies for StaticSitesClient
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y libgssapi-krb5-2 libssl-dev zlib1g libicu-dev
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -45,9 +40,31 @@ jobs:
           VITE_ENABLE_DEBUG: false
           VITE_COMPANY_NAME: Subh Sankalp Estate
 
-      - name: Install SWA CLI
-        run: npm install -g @azure/static-web-apps-cli
+      - name: Create deployment zip
+        run: |
+          cd Frontend/build
+          zip -r ../../deploy.zip .
+          echo "Zip size: $(ls -lh ../../deploy.zip)"
 
-      - name: Deploy to Azure Static Web Apps
-        working-directory: Frontend
-        run: swa deploy ./build --deployment-token "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BLACK_DESERT_0C929C500 }}" --env production
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy via Azure REST API (zipdeploy)
+        run: |
+          TOKEN=$(az account get-access-token --query accessToken -o tsv)
+          RESPONSE=$(curl -s -X POST \
+            "https://management.azure.com/subscriptions/a6759275-4ff2-4eaa-aa16-7c1a481e16ed/resourceGroups/SubhSankalpGroup/providers/Microsoft.Web/staticSites/subhsankalp-frontend/builds/default/zipdeploy?api-version=2022-03-01" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @deploy.zip \
+            -w "\nHTTP_STATUS:%{http_code}")
+          echo "$RESPONSE"
+          HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ]; then
+            echo "Deployment successful!"
+          else
+            echo "Deployment failed with HTTP $HTTP_CODE"
+            exit 1
+          fi

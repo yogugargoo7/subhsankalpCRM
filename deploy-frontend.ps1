@@ -1,5 +1,15 @@
 Write-Host "Building and deploying goldencityaligarh.com frontend..." -ForegroundColor Cyan
 
+# Load token from local config (not in git)
+$configFile = "$PSScriptRoot\.deploy-secrets.ps1"
+if (Test-Path $configFile) {
+    . $configFile
+} else {
+    Write-Host "ERROR: .deploy-secrets.ps1 not found!" -ForegroundColor Red
+    Write-Host "Create it with: `$SWA_TOKEN = 'your-token-here'" -ForegroundColor Yellow
+    exit 1
+}
+
 Set-Location "$PSScriptRoot\Frontend"
 
 Write-Host "Installing dependencies..." -ForegroundColor Yellow
@@ -17,6 +27,6 @@ $env:VITE_COMPANY_NAME = "Subh Sankalp Estate"
 npm run build
 
 Write-Host "Deploying to goldencityaligarh.com..." -ForegroundColor Yellow
-swa deploy ./build --deployment-token "1032a2819ae9fdf02fc4181f6ff35008f3294158eb34069389435379e5f1bc2003-ede3590e-6e58-40b0-b148-284284099bde00001080c929c500" --env production
+swa deploy ./build --deployment-token $SWA_TOKEN --env production
 
 Write-Host "Done! Site updated at goldencityaligarh.com" -ForegroundColor Green

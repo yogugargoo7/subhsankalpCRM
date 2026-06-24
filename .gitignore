@@ -108,3 +108,7 @@ Receipt-portal/.azure/
 
 # Stray files
 e -i HEAD~N
+
+# Local deploy secrets (never commit)
+.deploy-secrets.ps1
+backend-release.zip

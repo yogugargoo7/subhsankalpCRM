@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plot Availability - Golden City Township</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .summary-card .number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .summary-card .label {
+            font-size: 1rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .summary-card.total .number { color: #667eea; }
+        .summary-card.available .number { color: #10b981; }
+        .summary-card.token .number { color: #f59e0b; }
+        .summary-card.tokened .number { color: #f59e0b; }
+        .summary-card.partpayment .number { color: #3b82f6; }
+        .summary-card.booked .number { color: #8b5cf6; }
+        .summary-card.sold .number { color: #ef4444; }
+
+        .plots-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .plots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .plot-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .plot-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-3px);
+        }
+
+        .plot-card.available {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .plot-card.token,
+        .plot-card.tokened {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .plot-card.partpayment {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .plot-card.booked {
+            border-color: #8b5cf6;
+            background: #f5f3ff;
+        }
+
+        .plot-card.sold {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .plot-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .plot-details {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .plot-details div {
+            margin-bottom: 5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.available {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-badge.token,
+        .status-badge.tokened {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .status-badge.partpayment {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .status-badge.booked {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .status-badge.sold {
+            background: #ef4444;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .error {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .plots-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏘️ Plot Availability Status</h1>
+            <p>Real-time plot availability information</p>
+        </div>
+
+        <div id="summaryCards" class="summary-cards">
+            <!-- Summary cards will be inserted here -->
+        </div>
+
+        <div class="plots-container">
+            <!-- Search Bar -->
+            <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="🔍 Search by plot number, site name, block, or facing..." 
+                    style="flex: 1; padding: 12px 20px; font-size: 16px; border: 2px solid #e5e7eb; border-radius: 10px; outline: none; transition: border-color 0.3s;"
+                    onkeyup="handleSearch()"
+                    onfocus="this.style.borderColor='#667eea'"
+                    onblur="this.style.borderColor='#e5e7eb'"
+                />
+                <button 
+                    onclick="clearSearch()" 
+                    style="padding: 12px 24px; background: #ef4444; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; transition: background 0.3s;"
+                    onmouseover="this.style.background='#dc2626'"
+                    onmouseout="this.style.background='#ef4444'"
+                >
+                    Clear
+                </button>
+            </div>
+
+            <div class="filters" id="filters">
+                <button class="filter-btn active" data-filter="all">All Plots</button>
+                <button class="filter-btn" data-filter="Available">Available</button>
+                <button class="filter-btn" data-filter="Tokened">Token</button>
+                <button class="filter-btn" data-filter="PartPayment">Part Payment</button>
+                <button class="filter-btn" data-filter="Booked">Booked</button>
+                <button class="filter-btn" data-filter="Sold">Sold</button>
+            </div>
+
+            <div id="plotsGrid" class="plots-grid">
+                <div class="loading">Loading plots data...</div>
+            </div>
+
+            <div class="last-updated" id="lastUpdated"></div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ IMPORTANT: Replace this with your actual API URL
+        // For local development:
+        const API_URL = 'http://localhost:8080/api/public/plots';
+        // For production, use:
+        // const API_URL = 'https://backend-subhsankalp.azurewebsites.net/api/public/plots';
+        
+        let allPlots = [];
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        // Fetch plots data
+        async function fetchPlots() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch plots data');
+                }
+                
+                const data = await response.json();
+                allPlots = data.plots;
+                
+                // Update summary cards
+                updateSummaryCards(data);
+                
+                // Display plots and update counts
+                applyFilters();
+                
+                // Set last updated time
+                const lastUpdatedDiv = document.getElementById('lastUpdated');
+                const currentHtml = lastUpdatedDiv.innerHTML;
+                if (!currentHtml.includes('Last updated:')) {
+                    lastUpdatedDiv.innerHTML += `<div>Last updated: ${new Date().toLocaleString()}</div>`;
+                } else {
+                    lastUpdatedDiv.innerHTML = currentHtml.replace(
+                        /Last updated: .*/,
+                        `Last updated: ${new Date().toLocaleString()}`
+                    );
+                }
+                    
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('plotsGrid').innerHTML = `
+                    <div class="error">
+                        <h3>⚠️ Unable to load plots data</h3>
+                        <p>${error.message}</p>
+                        <p>Please check your API URL configuration</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Update summary cards
+        function updateSummaryCards(data) {
+            const summaryHTML = `
+                <div class="summary-card total">
+                    <div class="number">${data.totalPlots}</div>
+                    <div class="label">Total Plots</div>
+                </div>
+                <div class="summary-card available">
+                    <div class="number">${data.available}</div>
+                    <div class="label">Available</div>
+                </div>
+                <div class="summary-card token">
+                    <div class="number">${data.token}</div>
+                    <div class="label">Token</div>
+                </div>
+                <div class="summary-card partpayment">
+                    <div class="number">${data.partPayment}</div>
+                    <div class="label">Part Payment</div>
+                </div>
+                <div class="summary-card booked">
+                    <div class="number">${data.booked}</div>
+                    <div class="label">Booked</div>
+                </div>
+                <div class="summary-card sold">
+                    <div class="number">${data.sold}</div>
+                    <div class="label">Sold</div>
+                </div>
+            `;
+            document.getElementById('summaryCards').innerHTML = summaryHTML;
+        }
+
+        // Display plots
+        function displayPlots(plots) {
+            if (plots.length === 0) {
+                document.getElementById('plotsGrid').innerHTML = `
+                    <div class="loading">No plots found</div>
+                `;
+                return;
+            }
+
+            const plotsHTML = plots.map(plot => `
+                <div class="plot-card ${plot.status.toLowerCase().replace(' ', '')}">
+                    <div class="plot-number">${plot.plotNumber}</div>
+                    <div class="plot-details">
+                        <div><strong>Site:</strong> ${plot.siteName}</div>
+                        ${plot.block ? `<div><strong>Block:</strong> ${plot.block}</div>` : ''}
+                        <div><strong>Size:</strong> ${plot.plotSize}</div>
+                        <div><strong>Rate:</strong> ₹${plot.basicRate ? plot.basicRate.toLocaleString() : 'N/A'}/sq yd</div>
+                        ${plot.totalPrice ? `<div><strong>Price:</strong> ₹${plot.totalPrice.toLocaleString()}</div>` : ''}
+                    </div>
+                    <span class="status-badge ${plot.status.toLowerCase().replace(' ', '')}">${plot.status}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('plotsGrid').innerHTML = plotsHTML;
+        }
+
+        // Search functionality
+        function handleSearch() {
+            searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            applyFilters();
+        }
+
+        // Clear search
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            searchQuery = '';
+            applyFilters();
+        }
+
+        // Update result count without duplicating
+        function updateResultCount(filteredCount, totalCount) {
+            const lastUpdatedDiv = document.getElementById('lastUpdated');
+            const existingText = lastUpdatedDiv.textContent;
+            
+            // Extract just the "Last updated" part if it exists
+            const lastUpdatedMatch = existingText.match(/Last updated: .*/);
+            const lastUpdatedText = lastUpdatedMatch ? lastUpdatedMatch[0] : '';
+            
+            // Create result text
+            const resultText = searchQuery || currentFilter !== 'all'
+                ? `Showing ${filteredCount} of ${totalCount} plots`
+                : `Showing ${totalCount} plots`;
+            
+            // Update with result count and last updated time
+            lastUpdatedDiv.innerHTML = `
+                <div style="margin-bottom: 10px; font-weight: bold; color: #667eea;">${resultText}</div>
+                ${lastUpdatedText ? `<div>${lastUpdatedText}</div>` : ''}
+            `;
+        }
+
+        // Apply both status filter and search
+        function applyFilters() {
+            let filtered = allPlots;
+
+            // Apply status filter
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(plot => plot.status === currentFilter);
+            }
+
+            // Apply search filter
+            if (searchQuery) {
+                filtered = filtered.filter(plot => {
+                    const plotNumber = (plot.plotNumber || '').toLowerCase();
+                    const siteName = (plot.siteName || '').toLowerCase();
+                    const block = (plot.block || '').toLowerCase();
+                    const facing = (plot.facing || '').toLowerCase();
+                    const plotSize = (plot.plotSize || '').toLowerCase();
+                    
+                    // Smart number matching - extract numbers from search query
+                    const searchNumbers = searchQuery.match(/\d+/g);
+                    const searchLetters = searchQuery.replace(/\d+/g, '').trim();
+                    
+                    // If search contains numbers, do smart matching
+                    if (searchNumbers && searchNumbers.length > 0) {
+                        const plotNumbers = plotNumber.match(/\d+/g);
+                        const plotLetters = plotNumber.replace(/\d+/g, '').trim();
+                        
+                        // Check if letters match (if any)
+                        const lettersMatch = !searchLetters || plotLetters.includes(searchLetters);
+                        
+                        // Check if any number in plot matches any number in search (ignoring leading zeros)
+                        const numbersMatch = searchNumbers.some(searchNum => {
+                            const searchNumInt = parseInt(searchNum, 10);
+                            return plotNumbers && plotNumbers.some(plotNum => {
+                                const plotNumInt = parseInt(plotNum, 10);
+                                return plotNumInt === searchNumInt;
+                            });
+                        });
+                        
+                        if (lettersMatch && numbersMatch) {
+                            return true;
+                        }
+                    }
+                    
+                    // Fallback to regular includes search for non-numeric or mixed searches
+                    return plotNumber.includes(searchQuery) ||
+                           siteName.includes(searchQuery) ||
+                           block.includes(searchQuery) ||
+                           facing.includes(searchQuery) ||
+                           plotSize.includes(searchQuery);
+                });
+            }
+
+            displayPlots(filtered);
+            
+            // Update result count (don't duplicate)
+            updateResultCount(filtered.length, allPlots.length);
+        }
+
+        // Filter plots by status
+        function filterPlots(status) {
+            currentFilter = status;
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === status) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Apply filters
+            applyFilters();
+        }
+
+        // Setup filter buttons
+        document.getElementById('filters').addEventListener('click', (e) => {
+            if (e.target.classList.contains('filter-btn')) {
+                filterPlots(e.target.dataset.filter);
+            }
+        });
+
+        // Auto-refresh every 30 seconds
+        setInterval(fetchPlots, 30000);
+
+        // Initial load
+        fetchPlots();
+    </script>
+</body>
+</html>

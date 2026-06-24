@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Subh-sankalp-estate</name>
+    </assembly>
+    <members>
+        <member name="M:Subh_sankalp_estate.Controllers.PlotsController.ParsePlotSize(System.String)">
+            <summary>
+            Helper method to safely parse plot size from string
+            </summary>
+        </member>
+        <member name="M:Subh_sankalp_estate.Controllers.ReceiptsController.ParsePlotSize(System.String)">
+            <summary>
+            Helper method to safely parse plot size from string
+            </summary>
+        </member>
+        <member name="M:Subh_sankalp_estate.Controllers.ReceiptsController.UpdatePlotReceivedAmountByPlotNumberAsync(System.String,System.String)">
+            <summary>
+            Helper method to update plot's received amount and status based on all approved receipts
+            Uses plot number (SiteName + PlotNumber) for mapping instead of PlotId
+            </summary>
+        </member>
+        <member name="M:Subh_sankalp_estate.Controllers.ReceiptsController.UpdatePlotReceivedAmountAsync(System.Int32)">
+            <summary>
+            Legacy method for backward compatibility - converts PlotId to PlotNumber and calls the new method
+            </summary>
+        </member>
+        <member name="M:Subh_sankalp_estate.Controllers.ReceiptsController.ConvertTokenReceiptsToConvertedStatusAsync(System.Int32)">
+            <summary>
+            Converts all approved token receipts for a plot to "Converted" status when a booking receipt is created
+            </summary>
+        </member>
+        <member name="T:Subh_sankalp_estate.Migrations.InitialCreate">
+            <inheritdoc />
+        </member>
+        <member name="M:Subh_sankalp_estate.Migrations.InitialCreate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:Subh_sankalp_estate.Migrations.InitialCreate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:Subh_sankalp_estate.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+    </members>
+</doc>

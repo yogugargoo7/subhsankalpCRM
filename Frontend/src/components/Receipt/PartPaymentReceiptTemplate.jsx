@@ -1,0 +1,422 @@
+import { formatDate , formatCurrency} from "../../utils/helpers";
+import { numberToWords } from "../../utils/numberToWords";
+import { MapPin } from "lucide-react";
+
+const PartPaymentReceiptTemplate = ({ receipt }) => {
+  // Format receipt number as PP/25-26/0001
+  const getReceiptNumber = (receiptNo) => {
+    if (!receiptNo) return "PP/25-26/0001";
+
+    // If receiptNo is just a number, format it properly
+    if (/^\d+$/.test(receiptNo)) {
+      const paddedNumber = receiptNo.padStart(4, "0");
+      return `PP/25-26/${paddedNumber}`;
+    }
+
+    // If it's already formatted, return as is
+    return receiptNo;
+  };
+
+  return (
+    <>
+      <style>
+        {`
+          @media print {
+            .receipt-template {
+              width: 210mm !important;
+              height: 297mm !important;
+              margin: 0 !important;
+              padding: 15mm !important;
+              box-sizing: border-box !important;
+              font-size: 12px !important;
+              page-break-after: always;
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
+            
+            @page {
+              size: A4;
+              margin: 0;
+            }
+            
+            body {
+              margin: 0;
+              padding: 0;
+            }
+            
+            .no-print {
+              display: none !important;
+            }
+          }
+          
+          @media screen {
+            .receipt-template {
+              box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+              margin: 20px auto;
+              background: white;
+              padding: 30px;
+            }
+          }
+          
+          .company-header {
+            text-align: left;
+            margin-bottom: 17px;
+            padding-bottom: 10px;
+          }
+          
+          .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #000;
+            margin: 0;
+          }
+          
+          .receipt-title {
+            text-align: center;
+            margin: 17px 0;
+          }
+          
+          .receipt-title h2 {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0;
+            text-transform: uppercase;
+          }
+          
+          .receipt-title h3 {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 5px 0 0 0;
+            text-transform: uppercase;
+          }
+          
+          .receipt-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            border: 1px solid #000;
+          }
+          
+          .receipt-table td {
+            border: 1px solid #000;
+            padding: 8px 10px;
+            vertical-align: top;
+          }
+          
+          .receipt-table .label-cell {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            width: 120px;
+            font-size: 11px;
+          }
+          
+          .receipt-table .value-cell {
+            background-color: transparent;
+            font-size: 11px;
+          }
+          
+          .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border: 1px solid #000;
+          }
+          
+          .payment-table th {
+            border: 1px solid #000;
+            padding: 8px;
+            background-color: #f5f5f5;
+            font-weight: bold;
+            text-align: center;
+          }
+          
+          .payment-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            background-color: transparent;
+          }
+          
+          .payment-header {
+            text-align: center;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            text-transform: uppercase;
+          }
+          
+          .signature-section {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+          }
+          
+          .signature-box {
+            width: 250px;
+            text-align: center;
+          }
+          
+          .signature-line {
+            border-bottom: 1px solid #000;
+            height: 80px;
+            margin-bottom: 15px;
+          }
+          
+          .footer-section {
+            margin-top: 30px;
+            border-top: 1px solid #000;
+            padding-top: 15px;
+          }
+          
+          .footer-item {
+            margin-bottom: 12px;
+            font-size: 11px;
+            line-height: 1.4;
+          }
+          
+          .footer-label {
+            font-weight: bold;
+            color: #333;
+          }
+        `}
+      </style>
+      <div className="receipt-template" style={{ position: 'relative' }}>
+        {/* Watermark */}
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          opacity: 0.18,
+          zIndex: 0,
+          pointerEvents: 'none',
+          width: '210mm',
+          height: '297mm',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <img
+            src="/receipt-logo1.jpg"
+            alt="Watermark"
+            style={{
+              width: '500px',
+              height: 'auto',
+              maxWidth: '70%',
+              objectFit: 'contain'
+            }}
+          />
+        </div>
+
+        {/* Company Header */}
+        <div className="company-header" style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+            <img
+              src="/receipt-logo1.jpg"
+              alt="Company Logo"
+              style={{
+                height: "80px",
+                width: "auto",
+                objectFit: "contain",
+              }}
+            />
+            <h1 className="company-name">
+              {receipt.siteName || "Golden City Township"}
+            </h1>
+          </div>
+        </div>
+
+        {/* Receipt Title */}
+        <div className="receipt-title" style={{ position: 'relative', zIndex: 1 }}>
+          <h2>PAYMENT RECEIPT</h2>
+          <h3>{receipt.companyName}</h3>
+        </div>
+
+        {/* Main Receipt Information Table */}
+        <table className="receipt-table" style={{ position: 'relative', zIndex: 1 }}>
+          <tbody>
+            <tr>
+              <td className="label-cell">Receipt No.</td>
+              <td className="value-cell">
+                {getReceiptNumber(receipt.receiptNo)}
+              </td>
+              <td className="label-cell">Date</td>
+              <td className="value-cell" colSpan="3">
+                {formatDate(receipt.date)}
+              </td>
+            </tr>
+            <tr>
+              <td className="label-cell">Plot No.</td>
+              <td className="value-cell">{receipt.plotVillaNo}</td>
+              <td className="label-cell">Plot Size</td>
+              <td className="value-cell">{receipt.plotSize} sq yard</td>
+              <td className="label-cell">Basic Rate</td>
+              <td className="value-cell">
+                ₹
+                {receipt.basicRate ? receipt.basicRate.toLocaleString() : "N/A"}
+                /sq yard
+              </td>
+            </tr>
+            <tr>
+              <td className="label-cell">Client Name</td>
+              <td className="value-cell" colSpan="5">
+                {receipt.fromName}
+              </td>
+            </tr>
+            <tr>
+              <td className="label-cell">Relation Name</td>
+              <td className="value-cell">
+                {receipt.relationType} {receipt.relationName}
+              </td>
+              <td className="label-cell">Reference Name</td>
+              <td className="value-cell" colSpan="3">
+                {receipt.referenceName || "N/A"}
+              </td>
+            </tr>
+            <tr>
+              <td className="label-cell">Client Address</td>
+              <td className="value-cell" colSpan="5">
+                {receipt.address}
+              </td>
+            </tr>
+            <tr>
+              <td className="label-cell">PAN</td>
+              <td className="value-cell">{receipt.panNumber || ""}</td>
+              <td className="label-cell">Mobile</td>
+              <td className="value-cell" colSpan="3">
+                {receipt.mobile}
+              </td>
+            </tr>
+            <tr>
+              <td className="label-cell">AADHAR</td>
+              <td className="value-cell" colSpan="5">
+                {receipt.aadharNumber || ""}
+              </td>
+            </tr>
+            <tr>
+              <td className="label-cell">Amount</td>
+              <td className="value-cell" colSpan="5">
+               {formatCurrency(receipt.totalAmount > 0 ? receipt.totalAmount : receipt.amount)}  
+              </td>
+            </tr>
+            <tr>
+              <td className="label-cell">Amount (Words)</td>
+              <td className="value-cell" colSpan="5">
+                {numberToWords(
+                  receipt.totalAmount > 0 ? receipt.totalAmount : receipt.amount
+                )}
+              </td>
+            </tr>
+            <tr>
+              <td className="label-cell">Other Charges</td>
+              <td className="value-cell" colSpan="5">
+                {receipt.other || "N/A"}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Payment Received Through Section */}
+        <div className="payment-header">Payment Received Through</div>
+
+        <table className="payment-table">
+          <thead>
+            <tr>
+              <th>Payment Mode</th>
+              <th>Amount</th>
+              <th>Instrument No</th>
+              <th>Payment Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>CASH</td>
+              <td>
+                {receipt.cashChecked
+                  ? `${formatCurrency(receipt.amount)}`
+                  : "-NA-"}
+              </td>
+              <td>-</td>
+              <td>{receipt.cashChecked ? (receipt.paymentDate ? formatDate(receipt.paymentDate) : formatDate(receipt.date)) : "-"}</td>
+            </tr>
+            <tr>
+              <td>CHEQUE</td>
+              <td>
+                {receipt.chequeChecked
+                  ? `${formatCurrency(receipt.amount)}`
+                  : "-NA-"}
+              </td>
+              <td>{receipt.chequeNo || "-"}</td>
+              <td>{receipt.chequeChecked ? (receipt.paymentDate ? formatDate(receipt.paymentDate) : formatDate(receipt.date)) : "-"}</td>
+            </tr>
+            <tr>
+              <td>NEFT/IMPS/RTGS</td>
+              <td>
+                {receipt.rtgsChecked
+                  ? `${formatCurrency(receipt.amount)}`
+                  : "-NA-"}
+              </td>
+              <td>{receipt.rtgsNeft || "-"}</td>
+              <td>{receipt.rtgsChecked ? (receipt.paymentDate ? formatDate(receipt.paymentDate) : formatDate(receipt.date)) : "-"}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Payment Receipt Validity Note */}
+        <div style={{ fontWeight: "bold", margin: "14px 0px 70px" }}>
+          PAYMENT RECEIPT VALID SUBJECT TO CHEQUE REALIZATION
+        </div>
+
+        {/* Signature Section */}
+        <div className="signature-section">
+          <div className="signature-box">
+            <div className="signature-line"></div>
+            <div>CLIENT SIGNATURE</div>
+          </div>
+          <div className="signature-box">
+            <div
+              className="signature-line"
+              style={{
+                display: "flex",
+                alignItems: "flex-end",
+                justifyContent: "center",
+                paddingBottom: "5px",
+              }}
+            >
+              <img
+                src="/signsubh.png"
+                alt="Authorized Signature"
+                style={{
+                  maxHeight: "157px",
+                    maxWidth: "100%",
+                    objectFit: "contain",
+                    position: "relative",
+                    top: "40px",
+                }}
+              />
+            </div>
+            <div>AUTHORIZED SIGNATURE</div>
+          </div>
+        </div>
+
+        {/* Footer Section */}
+        <div className="footer-section">
+          <div className="footer-item">
+            <div style={{ display: "flex", alignItems: "flex-start" }}>
+              <MapPin
+                size={12}
+                style={{ marginRight: "5px", marginTop: "2px", flexShrink: 0 }}
+              />
+              <div>
+                <span className="footer-label">Registered Address:</span> 037UG,
+                BUILDERS SCHEME, OMAXE ARCADE GOLF LINK-1, Alpha Greater Noida,
+                Noida, Gautam Buddha Nagar, Uttar Pradesh - 201310
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default PartPaymentReceiptTemplate;

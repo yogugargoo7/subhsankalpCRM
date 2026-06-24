@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        pre {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 API Test Page</h1>
+    
+    <div class="test-section">
+        <h2>Backend URL Configuration</h2>
+        <p>Current API URL: <strong id="currentUrl"></strong></p>
+        <label>
+            Change URL:
+            <input type="text" id="apiUrlInput" style="width: 400px; padding: 5px;" />
+        </label>
+        <button onclick="updateUrl()">Update URL</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Endpoints</h2>
+        <button onclick="testEndpoint('/api/public/plots')">Test: Get All Plots</button>
+        <button onclick="testEndpoint('/api/public/plots/summary')">Test: Get Summary</button>
+        <button onclick="testEndpoint('/api/public/plots/by-site')">Test: Get By Site</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Response</h2>
+        <div id="status"></div>
+        <pre id="response">Click a button above to test the API...</pre>
+    </div>
+
+    <script>
+        // Default URLs
+        const LOCAL_URL = 'http://localhost:8080';
+        const PROD_URL = 'https://backend-subhsankalp.azurewebsites.net';
+        
+        let baseUrl = LOCAL_URL;
+        
+        // Initialize
+        document.getElementById('currentUrl').textContent = baseUrl;
+        document.getElementById('apiUrlInput').value = baseUrl;
+
+        function updateUrl() {
+            baseUrl = document.getElementById('apiUrlInput').value;
+            document.getElementById('currentUrl').textContent = baseUrl;
+            document.getElementById('status').innerHTML = '<p class="success">✅ URL updated!</p>';
+        }
+
+        async function testEndpoint(endpoint) {
+            const url = baseUrl + endpoint;
+            const statusDiv = document.getElementById('status');
+            const responseDiv = document.getElementById('response');
+            
+            statusDiv.innerHTML = '<p>⏳ Testing: ' + url + '</p>';
+            responseDiv.textContent = 'Loading...';
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(url);
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                statusDiv.innerHTML = `
+                    <p class="success">✅ Success!</p>
+                    <p>Status: ${response.status} ${response.statusText}</p>
+                    <p>Response Time: ${duration}ms</p>
+                `;
+                
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+                
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <p class="error">❌ Error!</p>
+                    <p>${error.message}</p>
+                `;
+                
+                responseDiv.textContent = `Error Details:
+${error.toString()}
+
+Possible Issues:
+1. Backend is not running
+2. Wrong URL/Port
+3. CORS not configured
+4. Endpoint doesn't exist
+
+Check browser console (F12) for more details.`;
+                
+                console.error('Full error:', error);
+            }
+        }
+
+        // Auto-detect if backend is running
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(LOCAL_URL + '/api/public/plots/summary');
+                if (response.ok) {
+                    document.getElementById('status').innerHTML = 
+                        '<p class="success">✅ Backend detected at ' + LOCAL_URL + '</p>';
+                }
+            } catch (e) {
+                document.getElementById('status').innerHTML = 
+                    '<p class="error">⚠️ Cannot connect to local backend. Make sure it\'s running!</p>';
+            }
+        });
+    </script>
+</body>
+</html>

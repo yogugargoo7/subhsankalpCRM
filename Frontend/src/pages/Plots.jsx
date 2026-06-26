@@ -45,7 +45,7 @@ import EditPlotForm from "../components/Forms/EditPlotForm";
 import BulkCreatePlotsForm from "../components/Forms/BulkCreatePlotsForm";
 import BookingReceiptForm from "../components/Forms/BookingReceiptForm";
 import PartPaymentForm from "../components/Forms/PartPaymentForm";
-import NOCReceiptForm from "../components/Forms/NOCReceiptForm";
+import EnhancedNOCForm from "../components/Forms/EnhancedNOCForm";
 import toast from "react-hot-toast";
 
 const Plots = () => {
@@ -592,126 +592,15 @@ const Plots = () => {
     fetchPlots(); // Refresh the plots list
   };
 
-  const handleNOCReceipt = async (plot) => {
-    // Ask user if they want to save to database
-    const saveToDatabase = window.confirm(
-      'Do you want to save this NOC Receipt to the database?\n\n' +
-      '• Click OK to save with a permanent receipt number\n' +
-      '• Click Cancel to generate for printing only (temporary number)'
-    );
-
-    try {
-      setLoading(true);
-      
-      // Fetch all receipts for this plot
-      const response = await receiptsAPI.getReceiptsByPlot(plot.id);
-      const previousReceipts = response.data || [];
-      const latestReceipt = previousReceipts[0] || {};
-
-      if (saveToDatabase) {
-        // Save to database with permanent receipt number
-        const receiptData = {
-          receiptType: 'noc',
-          fromName: latestReceipt.fromName || plot.customerName || '',
-          relationType: 'S/O',
-          relationName: latestReceipt.relationName || '',
-          address: latestReceipt.address || '',
-          mobile: latestReceipt.mobile || '',
-          panNumber: latestReceipt.panNumber || '',
-          aadharNumber: latestReceipt.aadharNumber || '',
-          companyName: latestReceipt.companyName || '',
-          referenceName: latestReceipt.referenceName || '',
-          siteName: plot.siteName || '',
-          plotVillaNo: plot.plotNumber || '',
-          amount: 0, // NOC has no amount
-          other: '',
-          cashChecked: false,
-          chequeChecked: false,
-          rtgsChecked: false,
-          chequeNo: '',
-          rtgsNeft: '',
-          adminRemarks: `NOC issued for fully paid plot - Total from ${previousReceipts.length} payment(s)`,
-          plotId: plot.id
-        };
-
-        const savedResponse = await receiptsAPI.createReceipt(receiptData);
-        const savedReceipt = savedResponse.data;
-
-        // Add payment history for display (exclude booking and NOC receipts)
-        savedReceipt.paymentHistory = previousReceipts
-          .filter(r => r.receiptType !== 'booking' && r.receiptType !== 'noc')
-          .map(r => ({
-            receiptNo: r.receiptNo,
-            receiptType: r.receiptType,
-            amount: r.totalAmount > 0 ? r.totalAmount : r.amount,
-            date: r.createdAt || r.date,
-            paymentMethod: r.cashChecked ? 'Cash' : 
-                          r.chequeChecked ? `Cheque (${r.chequeNo || 'N/A'})` :
-                          r.rtgsChecked ? `UPI/NEFT (${r.rtgsNeft || 'N/A'})` : 'N/A'
-          }));
-        savedReceipt.nocDate = savedReceipt.date;
-
-        setSelectedPlotForNOC(savedReceipt);
-        setShowNOCReceiptForm(true);
-        toast.success(`NOC receipt ${savedReceipt.receiptNo} saved to database!`);
-        
-        // Refresh plots to show updated data
-        fetchPlots();
-      } else {
-        // Generate temporary receipt for printing only
-        const nocReceiptNo = `NOC/${new Date().getFullYear()}/TEMP-${Date.now()}`;
-
-        const nocReceipt = {
-          receiptNo: nocReceiptNo,
-          receiptType: 'noc',
-          fromName: latestReceipt.fromName || plot.customerName || '',
-          relationType: 'S/O',
-          relationName: latestReceipt.relationName || '',
-          address: latestReceipt.address || '',
-          mobile: latestReceipt.mobile || '',
-          panNumber: latestReceipt.panNumber || '',
-          aadharNumber: latestReceipt.aadharNumber || '',
-          companyName: latestReceipt.companyName || '',
-          referenceName: latestReceipt.referenceName || '',
-          siteName: plot.siteName || '',
-          plotVillaNo: plot.plotNumber || '',
-          plotSize: plot.plotSize,
-          basicRate: plot.basicRate,
-          amount: 0,
-          totalAmount: plot.totalPrice || 0,
-          nocDate: new Date().toISOString(),
-          date: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          adminRemarks: `NOC (print only) - Total from ${previousReceipts.length} payment(s)`,
-          status: 'Approved',
-          paymentHistory: previousReceipts
-            .filter(r => r.receiptType !== 'booking' && r.receiptType !== 'noc')
-            .map(r => ({
-              receiptNo: r.receiptNo,
-              receiptType: r.receiptType,
-              amount: r.totalAmount > 0 ? r.totalAmount : r.amount,
-              date: r.createdAt || r.date,
-              paymentMethod: r.cashChecked ? 'Cash' : 
-                            r.chequeChecked ? `Cheque (${r.chequeNo || 'N/A'})` :
-                            r.rtgsChecked ? `UPI/NEFT (${r.rtgsNeft || 'N/A'})` : 'N/A'
-            }))
-        };
-        
-        setSelectedPlotForNOC(nocReceipt);
-        setShowNOCReceiptForm(true);
-        toast.success('NOC receipt generated for printing only!');
-      }
-    } catch (error) {
-      console.error('Error generating NOC receipt:', error);
-      toast.error('Failed to generate NOC receipt');
-    } finally {
-      setLoading(false);
-    }
+  const handleNOCReceipt = (plot) => {
+    setSelectedPlotForNOC(plot);
+    setShowNOCReceiptForm(true);
   };
 
   const handleNOCReceiptSuccess = () => {
     setShowNOCReceiptForm(false);
     setSelectedPlotForNOC(null);
+    fetchPlots();
   };
 
   const handleGenerateBookingReceipt = async (plot) => {
@@ -1848,7 +1737,7 @@ const Plots = () => {
       />
 
       {/* NOC Receipt Form */}
-      <NOCReceiptForm
+      <EnhancedNOCForm
         isOpen={showNOCReceiptForm}
         onClose={() => setShowNOCReceiptForm(false)}
         plot={selectedPlotForNOC}
